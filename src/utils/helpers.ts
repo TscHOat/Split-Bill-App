@@ -2,7 +2,13 @@
  * Helper functions for Split Bill App
  */
 
-import type { BillItem, BillState, BillSummary, SplitBillCalculation, Person } from '../types';
+import type {
+  BillItem,
+  BillState,
+  BillSummary,
+  SplitBillCalculation,
+  Person,
+} from "../types";
 
 /**
  * Generate unique ID
@@ -14,7 +20,9 @@ export const generateId = (): string => {
 /**
  * Calculate split bill with fair distribution of costs and discounts
  */
-export const calculateSplitBill = (billState: BillState): SplitBillCalculation => {
+export const calculateSplitBill = (
+  billState: BillState
+): SplitBillCalculation => {
   const { items, persons, serviceCharge, tax, discount } = billState;
 
   if (items.length === 0 || persons.length === 0) {
@@ -104,16 +112,20 @@ const calculatePerPersonAmount = (
     const personDiscountAmount =
       subtotal > 0 ? (personItemPrice / subtotal) * totalDiscount : 0;
 
-    // Calculate service charge share (proportionally)
+    // Calculate service charge share (equally)
     const personServiceChargeShare =
-      subtotal > 0 ? (personItemPrice / subtotal) * serviceChargeAmount : 0;
+      subtotal > 0 ? serviceChargeAmount / persons.length : 0;
 
     // Calculate tax share (proportionally)
-    const personTaxShare = subtotal > 0 ? (personItemPrice / subtotal) * taxAmount : 0;
+    const personTaxShare =
+      subtotal > 0 ? (personItemPrice / subtotal) * taxAmount : 0;
 
     // Final amount = item price - discount + service charge + tax
     const finalAmount =
-      personItemPrice - personDiscountAmount + personServiceChargeShare + personTaxShare;
+      personItemPrice -
+      personDiscountAmount +
+      personServiceChargeShare +
+      personTaxShare;
 
     return {
       personId: person.id,
@@ -131,8 +143,8 @@ const calculatePerPersonAmount = (
 /**
  * Format currency
  */
-export const formatCurrency = (value: number, currency = 'Rp'): string => {
-  return `${currency} ${value.toLocaleString('id-ID', {
+export const formatCurrency = (value: number, currency = "Rp"): string => {
+  return `${currency} ${value.toLocaleString("id-ID", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   })}`;
@@ -141,8 +153,10 @@ export const formatCurrency = (value: number, currency = 'Rp'): string => {
 /**
  * Validate JSON import format
  */
-export const validateJsonImport = (json: unknown): json is import('../types').JsonImportFormat => {
-  if (typeof json !== 'object' || json === null) return false;
+export const validateJsonImport = (
+  json: unknown
+): json is import("../types").JsonImportFormat => {
+  if (typeof json !== "object" || json === null) return false;
 
   const obj = json as Record<string, unknown>;
 
@@ -151,21 +165,21 @@ export const validateJsonImport = (json: unknown): json is import('../types').Js
 
   // Validate items structure
   const validItems = (obj.items as unknown[]).every((item) => {
-    if (typeof item !== 'object' || item === null) return false;
+    if (typeof item !== "object" || item === null) return false;
     const i = item as Record<string, unknown>;
     return (
-      typeof i.name === 'string' &&
-      typeof i.price === 'number' &&
-      typeof i.quantity === 'number' &&
-      typeof i.assignedPerson === 'string'
+      typeof i.name === "string" &&
+      typeof i.price === "number" &&
+      typeof i.quantity === "number" &&
+      typeof i.assignedPerson === "string"
     );
   });
 
   // Validate persons structure
   const validPersons = (obj.persons as unknown[]).every((person) => {
-    if (typeof person !== 'object' || person === null) return false;
+    if (typeof person !== "object" || person === null) return false;
     const p = person as Record<string, unknown>;
-    return typeof p.name === 'string';
+    return typeof p.name === "string";
   });
 
   return validItems && validPersons;
