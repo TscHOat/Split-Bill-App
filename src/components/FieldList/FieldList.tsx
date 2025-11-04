@@ -99,6 +99,7 @@ export default function FieldList({ fields, spacing = 2, ...props }: FieldListPr
       case 'text':
         return (
           <TextInputField
+            label={field.label}
             value={field.value}
             onChange={field.onChange}
             autoFocus={field.autoFocus}
@@ -108,6 +109,7 @@ export default function FieldList({ fields, spacing = 2, ...props }: FieldListPr
       case 'price':
         return (
           <PriceField
+            label={field.label}
             value={field.value}
             onChange={field.onChange}
           />
@@ -116,6 +118,7 @@ export default function FieldList({ fields, spacing = 2, ...props }: FieldListPr
       case 'quantity':
         return (
           <QuantityField
+            label={field.label}
             value={field.value}
             onChange={field.onChange}
           />

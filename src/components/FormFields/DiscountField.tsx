@@ -1,4 +1,5 @@
 import { TextField } from '@mui/material';
+import { useState, useEffect } from 'react';
 
 interface DiscountFieldProps {
   value: number;
@@ -6,19 +7,57 @@ interface DiscountFieldProps {
   label?: string;
 }
 
+/**
+ * Format number with thousand separators (1.000.000)
+ */
+function formatCurrencyDisplay(value: number): string {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'decimal',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+/**
+ * Remove formatting and convert to number
+ */
+function parseFormattedValue(input: string): number {
+  const cleaned = input.replace(/\D/g, '');
+  return parseFloat(cleaned) || 0;
+}
+
 export default function DiscountField({ 
   value, 
   onChange, 
   label = 'Discount (Rp)' 
 }: DiscountFieldProps) {
+  const [displayValue, setDisplayValue] = useState(formatCurrencyDisplay(value));
+
+  useEffect(() => {
+    setDisplayValue(formatCurrencyDisplay(value));
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+    const numValue = Math.max(0, parseFormattedValue(input));
+    setDisplayValue(input);
+    onChange(numValue);
+  };
+
+  const handleBlur = () => {
+    const numValue = Math.max(0, parseFormattedValue(displayValue));
+    setDisplayValue(formatCurrencyDisplay(numValue));
+  };
+
   return (
     <TextField
       label={label}
-      type="number"
       fullWidth
-      value={value}
-      onChange={(e) => onChange(Math.max(0, parseFloat(e.target.value) || 0))}
-      inputProps={{ step: '1000', min: '0' }}
+      value={displayValue}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      inputProps={{ step: '1000', min: '0', pattern: '[0-9]*' }}
+      placeholder="0"
     />
   );
 }
