@@ -20,6 +20,7 @@ export interface BillSummary {
   personName: string;
   totalItemPrice: number;
   discountAmount: number;
+  taxAmount:number;
   shareOfServiceCharge: number;
   finalAmount: number;
 }
