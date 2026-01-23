@@ -86,12 +86,15 @@ export default function JsonImportDialog({ open, onClose }: JsonImportDialogProp
         assignedPerson: personMap.get(item.assignedPerson) || '',
       }));
 
+      const charges = (parsed.charges || []).map((charge) => ({
+        id: generateId(),
+        ...charge,
+      }));
+
       const newBillState = {
         items,
         persons,
-        serviceCharge: parsed.serviceCharge || 0,
-        tax: parsed.tax || 0,
-        discount: parsed.discount || 0,
+        charges,
       };
 
       dispatch(loadFromJson(newBillState));
@@ -114,9 +117,12 @@ export default function JsonImportDialog({ open, onClose }: JsonImportDialogProp
         };
       }),
       persons: bill.persons.map((p) => ({ name: p.name })),
-      serviceCharge: bill.serviceCharge,
-      tax: bill.tax,
-      discount: bill.discount,
+      charges: bill.charges.map((charge) => ({
+        name: charge.name,
+        amount: charge.amount,
+        type: charge.type,
+        splitMethod: charge.splitMethod,
+      })),
     };
 
     const jsonString = JSON.stringify(exportData, null, 2);
@@ -150,9 +156,26 @@ export default function JsonImportDialog({ open, onClose }: JsonImportDialogProp
       { name: 'Bob' },
       { name: 'Charlie' },
     ],
-    serviceCharge: 15000,
-    tax: 20000,
-    discount: 10000,
+    charges: [
+      {
+        name: 'Service Charge',
+        amount: 15000,
+        type: 'charge',
+        splitMethod: 'equal',
+      },
+      {
+        name: 'Tax (PPN)',
+        amount: 20000,
+        type: 'charge',
+        splitMethod: 'proportional',
+      },
+      {
+        name: 'Early Bird Discount',
+        amount: 10000,
+        type: 'discount',
+        splitMethod: 'equal',
+      },
+    ],
   };
 
   const copyTemplate = () => {
@@ -207,7 +230,7 @@ export default function JsonImportDialog({ open, onClose }: JsonImportDialogProp
             </Typography>
             <TextField
               multiline
-              rows={10}
+              rows={15}
               fullWidth
               value={JSON.stringify(
                 {
@@ -221,9 +244,12 @@ export default function JsonImportDialog({ open, onClose }: JsonImportDialogProp
                     };
                   }),
                   persons: bill.persons.map((p) => ({ name: p.name })),
-                  serviceCharge: bill.serviceCharge,
-                  tax: bill.tax,
-                  discount: bill.discount,
+                  charges: bill.charges.map((charge) => ({
+                    name: charge.name,
+                    amount: charge.amount,
+                    type: charge.type,
+                    splitMethod: charge.splitMethod,
+                  })),
                 },
                 null,
                 2
@@ -243,7 +269,7 @@ export default function JsonImportDialog({ open, onClose }: JsonImportDialogProp
             </Typography>
             <TextField
               multiline
-              rows={10}
+              rows={15}
               fullWidth
               value={JSON.stringify(template, null, 2)}
               InputProps={{ readOnly: true }}
@@ -254,7 +280,7 @@ export default function JsonImportDialog({ open, onClose }: JsonImportDialogProp
                 Fields explanation:
               </Typography>
               <Typography component="div" variant="body2" sx={{ pl: 2 }}>
-                • <strong>items</strong>: Array of items ordered
+                <strong>Items:</strong>
                 <br />
                 • <strong>name</strong>: Item name
                 <br />
@@ -264,13 +290,21 @@ export default function JsonImportDialog({ open, onClose }: JsonImportDialogProp
                 <br />
                 • <strong>assignedPerson</strong>: Person who ordered (must match persons list)
                 <br />
-                • <strong>persons</strong>: Array of people in the bill
                 <br />
-                • <strong>serviceCharge</strong>: Service charge amount in Rp (optional)
+                <strong>Persons:</strong>
                 <br />
-                • <strong>tax</strong>: Tax amount in Rp (optional)
+                • <strong>name</strong>: Person name
                 <br />
-                • <strong>discount</strong>: Discount amount in Rp (optional)
+                <br />
+                <strong>Charges (optional):</strong>
+                <br />
+                • <strong>name</strong>: Charge/Discount name (e.g., "Service Charge", "Tax")
+                <br />
+                • <strong>amount</strong>: Amount in Rp
+                <br />
+                • <strong>type</strong>: "charge" or "discount"
+                <br />
+                • <strong>splitMethod</strong>: "equal" or "proportional"
               </Typography>
             </Alert>
           </Stack>

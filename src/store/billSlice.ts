@@ -1,14 +1,12 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { BillItem, BillState } from '../types';
+import type { BillItem, BillState, Charge } from '../types';
 import { generateId } from '../utils/helpers';
 
 const initialState: BillState = {
   items: [],
   persons: [],
-  serviceCharge: 0,
-  tax: 0,
-  discount: 0,
+  charges: [],
 };
 
 const billSlice = createSlice({
@@ -54,16 +52,27 @@ const billSlice = createSlice({
       });
     },
 
-    setServiceCharge: (state, action: PayloadAction<number>) => {
-      state.serviceCharge = action.payload;
+    addCharge: (state, action: PayloadAction<Omit<Charge, 'id'>>) => {
+      const newCharge: Charge = {
+        ...action.payload,
+        id: generateId(),
+      };
+      state.charges.push(newCharge);
     },
 
-    setTax: (state, action: PayloadAction<number>) => {
-      state.tax = action.payload;
+    updateCharge: (state, action: PayloadAction<Charge>) => {
+      const index = state.charges.findIndex((charge) => charge.id === action.payload.id);
+      if (index !== -1) {
+        state.charges[index] = action.payload;
+      }
     },
 
-    setDiscount: (state, action: PayloadAction<number>) => {
-      state.discount = action.payload;
+    deleteCharge: (state, action: PayloadAction<string>) => {
+      state.charges = state.charges.filter((charge) => charge.id !== action.payload);
+    },
+
+    clearCharges: (state) => {
+      state.charges = [];
     },
 
     loadFromJson: (_state, action: PayloadAction<BillState>) => {
@@ -77,9 +86,7 @@ const billSlice = createSlice({
     resetItemsAndPersons: (state) => {
       state.items = [];
       state.persons = [];
-      state.serviceCharge = 0;
-      state.tax = 0;
-      state.discount = 0;
+      state.charges = [];
     },
 
     clearItems: (state) => {
@@ -102,9 +109,10 @@ export const {
   deleteItem,
   addPerson,
   removePerson,
-  setServiceCharge,
-  setTax,
-  setDiscount,
+  addCharge,
+  updateCharge,
+  deleteCharge,
+  clearCharges,
   loadFromJson,
   clearBill,
   resetItemsAndPersons,

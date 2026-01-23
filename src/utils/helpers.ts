@@ -18,12 +18,12 @@ export const generateId = (): string => {
 };
 
 /**
- * Calculate split bill with fair distribution of costs and discounts
+ * Calculate split bill with fair distribution of costs and charges
  */
 export const calculateSplitBill = (
   billState: BillState
 ): SplitBillCalculation => {
-  const { items, persons, serviceCharge, tax, discount } = billState;
+  const { items, persons, charges } = billState;
 
   if (items.length === 0 || persons.length === 0) {
     return {
@@ -43,23 +43,36 @@ export const calculateSplitBill = (
     subtotal += itemTotal;
   });
 
-  // Calculate discount amount (global nominal discount)
-  const totalDiscount = discount;
-  const subtotalAfterDiscount = subtotal - totalDiscount;
+  // Calculate total discount and charges
+  let totalDiscount = 0;
+  let totalCharges = 0;
+  let serviceChargeAmount = 0;
+  let taxAmount = 0;
 
-  // Service charge and tax are already nominal amounts
-  const serviceChargeAmount = serviceCharge;
-  const taxAmount = tax;
-  const grandTotal = subtotalAfterDiscount + serviceChargeAmount + taxAmount;
+  charges.forEach((charge) => {
+    if (charge.type === 'discount') {
+      totalDiscount += charge.amount;
+    } else {
+      totalCharges += charge.amount;
+    }
+    // For backwards compatibility with BillSummary interface
+    if (charge.name.toLowerCase().includes('service') || charge.name.toLowerCase().includes('servis')) {
+      serviceChargeAmount += charge.amount;
+    }
+    if (charge.name.toLowerCase().includes('tax') || charge.name.toLowerCase().includes('pajak') || charge.name.toLowerCase().includes('ppn')) {
+      taxAmount += charge.amount;
+    }
+  });
+
+  const subtotalAfterDiscount = subtotal - totalDiscount;
+  const grandTotal = subtotalAfterDiscount + totalCharges;
 
   // Calculate per person breakdown
   const billSummary = calculatePerPersonAmount(
     items,
     persons,
     subtotal,
-    totalDiscount,
-    serviceChargeAmount,
-    taxAmount
+    charges
   );
 
   return {
@@ -76,16 +89,14 @@ export const calculateSplitBill = (
  * Calculate amount for each person
  * Fair distribution means:
  * 1. Each person pays only for items they ordered
- * 2. Discount is proportionally distributed based on item cost
- * 3. Service charge and tax are distributed proportionally to subtotal before discount
+ * 2. Charges are split based on splitMethod (equal or proportional)
+ * 3. Discounts are proportionally distributed based on item cost
  */
 const calculatePerPersonAmount = (
   items: BillItem[],
   persons: Person[],
   subtotal: number,
-  totalDiscount: number,
-  serviceChargeAmount: number,
-  taxAmount: number
+  charges: any[]
 ): BillSummary[] => {
   // Group items by person
   const personItemMap = new Map<string, BillItem[]>();
@@ -108,32 +119,65 @@ const calculatePerPersonAmount = (
       return sum + item.price * item.quantity;
     }, 0);
 
-    // Calculate discount for this person (proportionally based on their items)
-    const personDiscountAmount =
-      subtotal > 0 ? (personItemPrice / subtotal) * totalDiscount : 0;
+    // Calculate discount for this person based on split method
+    let personDiscountAmount = 0;
+    charges.forEach((charge) => {
+      if (charge.type === 'discount') {
+        if (charge.splitMethod === 'equal') {
+          // Split equally among all persons
+          personDiscountAmount += charge.amount / persons.length;
+        } else if (charge.splitMethod === 'proportional') {
+          // Split proportionally based on item amount
+          personDiscountAmount += subtotal > 0 ? (personItemPrice / subtotal) * charge.amount : 0;
+        }
+      }
+    });
 
-    // Calculate service charge share (equally)
-    const personServiceChargeShare =
-      subtotal > 0 ? serviceChargeAmount / persons.length : 0;
+    // Calculate charges for this person based on split method
+    let personCharges = 0;
+    charges.forEach((charge) => {
+      if (charge.type === 'charge') {
+        if (charge.splitMethod === 'equal') {
+          // Split equally among all persons
+          personCharges += charge.amount / persons.length;
+        } else if (charge.splitMethod === 'proportional') {
+          // Split proportionally based on item amount
+          personCharges += subtotal > 0 ? (personItemPrice / subtotal) * charge.amount : 0;
+        }
+      }
+    });
 
-    // Calculate tax share (proportionally)
-    const personTaxShare =
-      subtotal > 0 ? (personItemPrice / subtotal) * taxAmount : 0;
+    // Calculate service charge share for BillSummary interface
+    const shareOfServiceCharge = personCharges;
 
-    // Final amount = item price - discount + service charge + tax
+    // Calculate tax share for BillSummary interface (sum of taxes)
+    let taxAmount = 0;
+    charges.forEach((charge) => {
+      if ((charge.name.toLowerCase().includes('tax') || 
+           charge.name.toLowerCase().includes('pajak') || 
+           charge.name.toLowerCase().includes('ppn')) &&
+          charge.type === 'charge') {
+        if (charge.splitMethod === 'equal') {
+          taxAmount += charge.amount / persons.length;
+        } else if (charge.splitMethod === 'proportional') {
+          taxAmount += subtotal > 0 ? (personItemPrice / subtotal) * charge.amount : 0;
+        }
+      }
+    });
+
+    // Final amount = item price - discount + charges
     const finalAmount =
       personItemPrice -
       personDiscountAmount +
-      personServiceChargeShare +
-      personTaxShare;
+      personCharges;
 
     return {
       personId: person.id,
       personName: person.name,
       totalItemPrice: personItemPrice,
       discountAmount: personDiscountAmount,
-      taxAmount: personTaxShare,
-      shareOfServiceCharge: personServiceChargeShare, // Combined service charge and tax
+      taxAmount,
+      shareOfServiceCharge,
       finalAmount,
     };
   });
@@ -183,5 +227,21 @@ export const validateJsonImport = (
     return typeof p.name === "string";
   });
 
-  return validItems && validPersons;
+  // Validate charges structure (optional)
+  let validCharges = true;
+  if (obj.charges !== undefined) {
+    if (!Array.isArray(obj.charges)) return false;
+    validCharges = (obj.charges as unknown[]).every((charge) => {
+      if (typeof charge !== "object" || charge === null) return false;
+      const c = charge as Record<string, unknown>;
+      return (
+        typeof c.name === "string" &&
+        typeof c.amount === "number" &&
+        (c.type === "charge" || c.type === "discount") &&
+        (c.splitMethod === "equal" || c.splitMethod === "proportional")
+      );
+    });
+  }
+
+  return validItems && validPersons && validCharges;
 };

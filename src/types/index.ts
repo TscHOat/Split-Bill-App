@@ -15,6 +15,17 @@ export interface Person {
   name: string;
 }
 
+export type ChargeType = 'discount' | 'charge';
+export type SplitMethod = 'equal' | 'proportional';
+
+export interface Charge {
+  id: string;
+  name: string;
+  amount: number;
+  type: ChargeType; // 'discount' or 'charge'
+  splitMethod: SplitMethod; // 'equal' or 'proportional'
+}
+
 export interface BillSummary {
   personId: string;
   personName: string;
@@ -28,9 +39,7 @@ export interface BillSummary {
 export interface BillState {
   items: BillItem[];
   persons: Person[];
-  serviceCharge: number; // nominal amount in Rp
-  tax: number; // nominal amount in Rp
-  discount: number; // global discount in nominal Rp
+  charges: Charge[];
 }
 
 export interface SplitBillCalculation {
@@ -52,7 +61,10 @@ export interface JsonImportFormat {
   persons: Array<{
     name: string;
   }>;
-  serviceCharge?: number;
-  tax?: number;
-  discount?: number;
+  charges?: Array<{
+    name: string;
+    amount: number;
+    type: ChargeType;
+    splitMethod: SplitMethod;
+  }>;
 }

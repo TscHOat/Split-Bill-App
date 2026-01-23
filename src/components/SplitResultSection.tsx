@@ -20,6 +20,11 @@ import { calculateSplitBill, formatCurrency } from '../utils/helpers';
 export default function SplitResultSection() {
   const bill = useAppSelector((state: RootState) => state.bill);
   const result = calculateSplitBill(bill);
+  
+  // Separate discounts and charges
+  const discounts = bill.charges.filter((c) => c.type === 'discount');
+  const charges = bill.charges.filter((c) => c.type === 'charge');
+  
   const handleCopyResult = () => {
     const resultText = bill.persons
       .map((person) => {
@@ -74,26 +79,23 @@ export default function SplitResultSection() {
                   <Typography variant="body2">Subtotal:</Typography>
                   <Typography variant="body2">{formatCurrency(result.subtotal)}</Typography>
                 </Box>
-                {result.totalDiscount > 0 && (
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', color: 'success.main' }}>
-                    <Typography variant="body2">Total Discount:</Typography>
-                    <Typography variant="body2">-{formatCurrency(result.totalDiscount)}</Typography>
+                
+                {/* Show all discounts */}
+                {discounts.map((discount) => (
+                  <Box key={discount.id} sx={{ display: 'flex', justifyContent: 'space-between', color: 'success.main' }}>
+                    <Typography variant="body2">{discount.name}:</Typography>
+                    <Typography variant="body2">-{formatCurrency(discount.amount)}</Typography>
                   </Box>
-                )}
-                {result.serviceChargeAmount > 0 && (
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2">Service Charge:</Typography>
-                    <Typography variant="body2">
-                      +{formatCurrency(result.serviceChargeAmount)}
-                    </Typography>
+                ))}
+                
+                {/* Show all charges */}
+                {charges.map((charge) => (
+                  <Box key={charge.id} sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="body2">{charge.name}:</Typography>
+                    <Typography variant="body2">+{formatCurrency(charge.amount)}</Typography>
                   </Box>
-                )}
-                {result.taxAmount > 0 && (
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2">Tax:</Typography>
-                    <Typography variant="body2">+{formatCurrency(result.taxAmount)}</Typography>
-                  </Box>
-                )}
+                ))}
+                
                 <Box
                   sx={{
                     display: 'flex',
@@ -126,9 +128,12 @@ export default function SplitResultSection() {
                 <TableRow>
                   <TableCell sx={{ fontWeight: 600 }}>Person</TableCell>
                   <TableCell align="right" sx={{ fontWeight: 600 }}>Items</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 600 }}>Discount</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 600 }}>Charges</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 600 }}>Tax</TableCell>
+                  {discounts.length > 0 && (
+                    <TableCell align="right" sx={{ fontWeight: 600 }}>Discount</TableCell>
+                  )}
+                  {charges.length > 0 && (
+                    <TableCell align="right" sx={{ fontWeight: 600 }}>Charges</TableCell>
+                  )}
                   <TableCell align="right" sx={{ fontWeight: 600 }}>
                     Amount to Pay
                   </TableCell>
@@ -141,15 +146,16 @@ export default function SplitResultSection() {
                     <TableCell align="right">
                       {formatCurrency(summary.totalItemPrice)}
                     </TableCell>
-                    <TableCell align="right" sx={{ color: 'success.main' }}>
-                      -{formatCurrency(summary.discountAmount)}
-                    </TableCell>
-                    <TableCell align="right">
-                      +{formatCurrency(summary.shareOfServiceCharge)}
-                    </TableCell>
-                    <TableCell align="right">
-                      +{formatCurrency(summary.taxAmount)}
-                    </TableCell>
+                    {discounts.length > 0 && (
+                      <TableCell align="right" sx={{ color: 'success.main' }}>
+                        -{formatCurrency(summary.discountAmount)}
+                      </TableCell>
+                    )}
+                    {charges.length > 0 && (
+                      <TableCell align="right">
+                        +{formatCurrency(summary.shareOfServiceCharge)}
+                      </TableCell>
+                    )}
                     <TableCell
                       align="right"
                       sx={{

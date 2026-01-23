@@ -24,13 +24,10 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import AddItemDialog from "./AddItemDialog";
-import { FieldList, type FieldConfig } from "./FieldList";
+import ChargesList from "./ChargesList";
 import { useAppDispatch, useAppSelector, type RootState } from "../utils/hooks";
 import {
   deleteItem,
-  setServiceCharge,
-  setTax,
-  setDiscount,
   clearItems,
 } from "../store/billSlice";
 import { formatCurrency } from "../utils/helpers";
@@ -39,11 +36,6 @@ import type { BillItem } from "../types";
 export default function ItemsList() {
   const dispatch = useAppDispatch();
   const items = useAppSelector((state: RootState) => state.bill.items);
-  const serviceCharge = useAppSelector(
-    (state: RootState) => state.bill.serviceCharge
-  );
-  const tax = useAppSelector((state: RootState) => state.bill.tax);
-  const discount = useAppSelector((state: RootState) => state.bill.discount);
   const persons = useAppSelector((state: RootState) => state.bill.persons);
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -69,10 +61,7 @@ export default function ItemsList() {
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-  const totalDiscount = discount;
-  const subtotalAfterDiscount = subtotal - totalDiscount;
-  const serviceChargeAmount = serviceCharge;
-  const taxAmount = tax;
+
 
   return (
     <>
@@ -220,130 +209,12 @@ export default function ItemsList() {
                       {formatCurrency(subtotal)}
                     </Typography>
                   </Box>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      color: "success.main",
-                    }}
-                  >
-                    <Typography>Total Discount:</Typography>
-                    <Typography sx={{ fontWeight: 600 }}>
-                      -{formatCurrency(totalDiscount)}
-                    </Typography>
-                  </Box>
-                  <Box
-                    sx={{ display: "flex", justifyContent: "space-between" }}
-                  >
-                    <Typography>After Discount:</Typography>
-                    <Typography sx={{ fontWeight: 600 }}>
-                      {formatCurrency(subtotalAfterDiscount)}
-                    </Typography>
-                  </Box>
                 </Stack>
 
-                {/* Service Charge & Tax Settings */}
-                <Stack
-                  spacing={2}
-                  sx={{ bgcolor: "action.hover", p: 2, borderRadius: 1 }}
-                >
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                    ⚙️ Discount & Additional Charges
-                  </Typography>
-                  <FieldList
-                    fields={
-                      [
-                        {
-                          label: "Discount",
-                          type: "price",
-                          key: "discount",
-                          value: discount,
-                          onChange: (value) =>
-                            dispatch(setDiscount(Math.max(0, value))),
-                        },
-                        {
-                          label: "Service Charge",
-                          type: "price",
-                          key: "serviceCharge",
-                          value: serviceCharge,
-                          onChange: (value) =>
-                            dispatch(setServiceCharge(Math.max(0, value))),
-                        },
-                        {
-                          label: "Tax",
-                          type: "price",
-                          key: "tax",
-                          value: tax,
-                          onChange: (value) =>
-                            dispatch(setTax(Math.max(0, value))),
-                        },
-                      ] as FieldConfig[]
-                    }
-                    spacing={1}
-                    direction={{ xs: "column", sm: "row" }}
-                  />
-                  {(totalDiscount > 0 ||
-                    serviceChargeAmount > 0 ||
-                    taxAmount > 0) && (
-                    <Stack
-                      spacing={0.5}
-                      sx={{
-                        mt: 1,
-                        pt: 1,
-                        borderTop: "1px solid",
-                        borderColor: "divider",
-                      }}
-                    >
-                      {totalDiscount > 0 && (
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            fontSize: "0.9rem",
-                          }}
-                        >
-                          <Typography variant="body2">Discount:</Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{ fontWeight: 600, color: "success.main" }}
-                          >
-                            -{formatCurrency(totalDiscount)}
-                          </Typography>
-                        </Box>
-                      )}
-                      {serviceChargeAmount > 0 && (
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            fontSize: "0.9rem",
-                          }}
-                        >
-                          <Typography variant="body2">
-                            Service Charge:
-                          </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {formatCurrency(serviceChargeAmount)}
-                          </Typography>
-                        </Box>
-                      )}
-                      {taxAmount > 0 && (
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            fontSize: "0.9rem",
-                          }}
-                        >
-                          <Typography variant="body2">Tax:</Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {formatCurrency(taxAmount)}
-                          </Typography>
-                        </Box>
-                      )}
-                    </Stack>
-                  )}
-                </Stack>
+                {/* Discount & Additional Charges Section */}
+                <Box sx={{ bgcolor: "action.hover", p: 2, borderRadius: 1 }}>
+                  <ChargesList />
+                </Box>
               </>
             )}
           </Stack>
