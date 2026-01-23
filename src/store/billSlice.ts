@@ -81,6 +81,18 @@ const billSlice = createSlice({
       state.tax = 0;
       state.discount = 0;
     },
+
+    clearItems: (state) => {
+      state.items = [];
+    },
+
+    clearPersons: (state) => {
+      state.persons = [];
+      // Also clear assigned persons from items
+      state.items.forEach((item) => {
+        item.assignedPerson = '';
+      });
+    },
   },
 });
 
@@ -96,6 +108,8 @@ export const {
   loadFromJson,
   clearBill,
   resetItemsAndPersons,
+  clearItems,
+  clearPersons,
 } = billSlice.actions;
 
 export default billSlice.reducer;

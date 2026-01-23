@@ -10,18 +10,22 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  IconButton,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
+import DeleteIcon from '@mui/icons-material/Delete';
+import CloseIcon from '@mui/icons-material/Close';
 import { useAppDispatch, useAppSelector, type RootState } from '../utils/hooks';
-import { addPerson, resetItemsAndPersons } from '../store/billSlice';
+import { addPerson, removePerson, resetItemsAndPersons, clearPersons } from '../store/billSlice';
 
 export default function InputSection({ onImportClick }: { onImportClick: () => void }) {
   const dispatch = useAppDispatch();
   const persons = useAppSelector((state: RootState) => state.bill.persons);
   const [newPersonName, setNewPersonName] = useState('');
   const [showClearDialog, setShowClearDialog] = useState(false);
+  const [showClearPersonsDialog, setShowClearPersonsDialog] = useState(false);
 
   const handleAddPerson = () => {
     if (newPersonName.trim()) {
@@ -33,6 +37,11 @@ export default function InputSection({ onImportClick }: { onImportClick: () => v
   const handleClearAll = () => {
     dispatch(resetItemsAndPersons());
     setShowClearDialog(false);
+  };
+
+  const handleClearPersons = () => {
+    dispatch(clearPersons());
+    setShowClearPersonsDialog(false);
   };
 
   return (
@@ -101,12 +110,40 @@ export default function InputSection({ onImportClick }: { onImportClick: () => v
                       borderRadius: 2,
                       fontSize: '0.9rem',
                       fontWeight: 500,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
                     }}
                   >
                     👤 {person.name}
+                    <IconButton
+                      size="small"
+                      onClick={() => dispatch(removePerson(person.id))}
+                      sx={{
+                        color: 'inherit',
+                        p: 0.5,
+                        '&:hover': {
+                          bgcolor: 'rgba(0,0,0,0.1)',
+                        },
+                      }}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
                   </Box>
                 ))}
               </Stack>
+              {persons.length > 0 && (
+                <Box sx={{ mt: 1 }}>
+                  <Button
+                    size="small"
+                    color="error"
+                    startIcon={<DeleteIcon />}
+                    onClick={() => setShowClearPersonsDialog(true)}
+                  >
+                    Delete All Persons
+                  </Button>
+                </Box>
+              )}
             </Box>
           )}
 
@@ -145,6 +182,22 @@ export default function InputSection({ onImportClick }: { onImportClick: () => v
           <Button onClick={() => setShowClearDialog(false)}>Cancel</Button>
           <Button onClick={handleClearAll} color="error" variant="contained">
             Clear All
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Clear Persons Dialog */}
+      <Dialog open={showClearPersonsDialog} onClose={() => setShowClearPersonsDialog(false)}>
+        <DialogTitle>Delete all persons?</DialogTitle>
+        <DialogContent>
+          <Typography>
+            This will delete all people. Items assigned to them will have their assignments cleared. This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowClearPersonsDialog(false)}>Cancel</Button>
+          <Button onClick={handleClearPersons} color="error" variant="contained">
+            Delete All Persons
           </Button>
         </DialogActions>
       </Dialog>

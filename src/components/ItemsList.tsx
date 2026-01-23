@@ -14,10 +14,15 @@ import {
   Box,
   IconButton,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import AddItemDialog from "./AddItemDialog";
 import { FieldList, type FieldConfig } from "./FieldList";
 import { useAppDispatch, useAppSelector, type RootState } from "../utils/hooks";
@@ -26,6 +31,7 @@ import {
   setServiceCharge,
   setTax,
   setDiscount,
+  clearItems,
 } from "../store/billSlice";
 import { formatCurrency } from "../utils/helpers";
 import type { BillItem } from "../types";
@@ -42,6 +48,7 @@ export default function ItemsList() {
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<BillItem | null>(null);
+  const [showClearItemsDialog, setShowClearItemsDialog] = useState(false);
 
   const handleEdit = (item: BillItem) => {
     setEditingItem(item);
@@ -51,6 +58,11 @@ export default function ItemsList() {
   const handleCloseDialog = () => {
     setAddDialogOpen(false);
     setEditingItem(null);
+  };
+
+  const handleClearItems = () => {
+    dispatch(clearItems());
+    setShowClearItemsDialog(false);
   };
 
   const subtotal = items.reduce(
@@ -76,17 +88,29 @@ export default function ItemsList() {
               }}
             >
               <Typography variant="h5">🍽️ Items</Typography>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => {
-                  setEditingItem(null);
-                  setAddDialogOpen(true);
-                }}
-                disabled={persons.length === 0}
-              >
-                Add Item
-              </Button>
+              <Stack direction="row" spacing={1}>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => {
+                    setEditingItem(null);
+                    setAddDialogOpen(true);
+                  }}
+                  disabled={persons.length === 0}
+                >
+                  Add Item
+                </Button>
+                {items.length > 0 && (
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<DeleteSweepIcon />}
+                    onClick={() => setShowClearItemsDialog(true)}
+                  >
+                    Delete All
+                  </Button>
+                )}
+              </Stack>
             </Box>
 
             {persons.length === 0 && (
@@ -332,6 +356,22 @@ export default function ItemsList() {
         onClose={handleCloseDialog}
         editingItem={editingItem}
       />
+
+      {/* Clear Items Dialog */}
+      <Dialog open={showClearItemsDialog} onClose={() => setShowClearItemsDialog(false)}>
+        <DialogTitle>Delete all items?</DialogTitle>
+        <DialogContent>
+          <Typography>
+            This will delete all items in the bill. This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowClearItemsDialog(false)}>Cancel</Button>
+          <Button onClick={handleClearItems} color="error" variant="contained">
+            Delete All
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }
