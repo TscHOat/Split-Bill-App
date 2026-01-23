@@ -20,7 +20,6 @@ import { calculateSplitBill, formatCurrency } from '../utils/helpers';
 export default function SplitResultSection() {
   const bill = useAppSelector((state: RootState) => state.bill);
   const result = calculateSplitBill(bill);
-
   const handleCopyResult = () => {
     const resultText = bill.persons
       .map((person) => {
@@ -129,6 +128,7 @@ export default function SplitResultSection() {
                   <TableCell align="right" sx={{ fontWeight: 600 }}>Items</TableCell>
                   <TableCell align="right" sx={{ fontWeight: 600 }}>Discount</TableCell>
                   <TableCell align="right" sx={{ fontWeight: 600 }}>Charges</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600 }}>Tax</TableCell>
                   <TableCell align="right" sx={{ fontWeight: 600 }}>
                     Amount to Pay
                   </TableCell>
@@ -146,6 +146,9 @@ export default function SplitResultSection() {
                     </TableCell>
                     <TableCell align="right">
                       +{formatCurrency(summary.shareOfServiceCharge)}
+                    </TableCell>
+                    <TableCell align="right">
+                      +{formatCurrency(summary.taxAmount)}
                     </TableCell>
                     <TableCell
                       align="right"

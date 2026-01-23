@@ -132,7 +132,8 @@ const calculatePerPersonAmount = (
       personName: person.name,
       totalItemPrice: personItemPrice,
       discountAmount: personDiscountAmount,
-      shareOfServiceCharge: personServiceChargeShare + personTaxShare, // Combined service charge and tax
+      taxAmount: personTaxShare,
+      shareOfServiceCharge: personServiceChargeShare, // Combined service charge and tax
       finalAmount,
     };
   });
